@@ -20,46 +20,46 @@ data class BrandSettingTip(
 object BrandTipProvider {
     private val tips: Map<TvBrand, BrandSettingTip> = mapOf(
         TvBrand.SONY to BrandSettingTip(
-            pictureMode = "Custom / Pro",
-            colorTemp = "Expert 1",
-            sharpness = "50 (Neutral) / 0",
+            pictureMode = "โหมดภาพ: Custom / Pro",
+            colorTemp = "อุณหภูมิสี: Expert 1",
+            sharpness = "ความคมชัด: 50 (ค่ากลาง) หรือ 0",
             motionSmoothing = "Motionflow: Off / True Cinema",
-            aspectSetting = "Wide mode: Full / +1 Screen Area"
+            aspectSetting = "โหมดกว้าง: เต็มจอ / +1 พื้นที่หน้าจอ"
         ),
         TvBrand.TCL to BrandSettingTip(
-            pictureMode = "Movie",
-            colorTemp = "Warm -5",
-            sharpness = "0",
+            pictureMode = "โหมดภาพ: Movie",
+            colorTemp = "อุณหภูมิสี: Warm -5",
+            sharpness = "ความคมชัด: 0",
             motionSmoothing = "Action Clarity / LED Motion: Off",
-            aspectSetting = "Auto Format: Off, Just Scan: On"
+            aspectSetting = "จัดรูปแบบอัตโนมัติ: ปิด, แค่สแกน (Just Scan): เปิด"
         ),
         TvBrand.HISENSE to BrandSettingTip(
-            pictureMode = "Filmmaker Mode / Theater Day",
-            colorTemp = "Warm",
-            sharpness = "0",
+            pictureMode = "โหมดภาพ: Filmmaker Mode / Theater Day",
+            colorTemp = "อุณหภูมิสี: Warm",
+            sharpness = "ความคมชัด: 0",
             motionSmoothing = "Ultra Smooth Motion: Off",
-            aspectSetting = "Direct / 1:1"
+            aspectSetting = "สัดส่วนภาพ: ตรงจุด (Direct) / 1:1"
         ),
         TvBrand.SAMSUNG_BOX to BrandSettingTip(
-            pictureMode = "Movie / Filmmaker Mode",
-            colorTemp = "Warm 2",
-            sharpness = "0",
+            pictureMode = "โหมดภาพ: Movie / Filmmaker Mode",
+            colorTemp = "อุณหภูมิสี: Warm 2",
+            sharpness = "ความคมชัด: 0",
             motionSmoothing = "Auto Motion Plus: Off",
-            aspectSetting = "16:9 Standard / Fit to Screen: On"
+            aspectSetting = "ขนาดภาพ: 16:9 มาตรฐาน / พอดีจอ (Fit to Screen): เปิด"
         ),
         TvBrand.LG_BOX to BrandSettingTip(
-            pictureMode = "Cinema / Filmmaker Mode",
-            colorTemp = "Warm 50",
-            sharpness = "0",
+            pictureMode = "โหมดภาพ: Cinema / Filmmaker Mode",
+            colorTemp = "อุณหภูมิสี: Warm 50",
+            sharpness = "ความคมชัด: 0",
             motionSmoothing = "TruMotion: Off",
-            aspectSetting = "Original / Just Scan: On"
+            aspectSetting = "อัตราส่วน: ดั้งเดิม / สแกนพอดีจอ (Just Scan): เปิด"
         ),
         TvBrand.UNIVERSAL to BrandSettingTip(
-            pictureMode = "Movie / Cinema",
-            colorTemp = "Warm / Warm 2",
-            sharpness = "0",
-            motionSmoothing = "Motion Smoothing: Off",
-            aspectSetting = "Just Scan / 1:1 / Full"
+            pictureMode = "โหมดภาพ: Movie / Cinema / โรงภาพยนตร์",
+            colorTemp = "อุณหภูมิสี: Warm / Warm 2 (โทนอุ่น)",
+            sharpness = "ความคมชัด: 0 (ปิดเส้นขอบขาวหลอกตา)",
+            motionSmoothing = "Motion Smoothing: Off (ปิดระบบแทรกเฟรม)",
+            aspectSetting = "สัดส่วนภาพ: Just Scan / 1:1 / เต็มจอ (ปิด Overscan)"
         )
     )
 
@@ -72,8 +72,8 @@ object BrandTipProvider {
         return when (step) {
             PatternStep.PICTURE_MODE_BASE -> tip.pictureMode
             PatternStep.ASPECT_RATIO -> tip.aspectSetting
-            PatternStep.BLACK_LEVEL_PLUGE -> "Adjust Brightness: ensure bar 16 blends into background while bar 17+ remains visible"
-            PatternStep.WHITE_LEVEL_CONTRAST -> "Adjust Contrast: preserve highlights up to bar 234 without clipping or color tint"
+            PatternStep.BLACK_LEVEL_PLUGE -> "ปรับ Brightness (ระดับสีดำ): แถบ 16 ต้องกลืนกับพื้นหลัง และแถบ 17 เป็นต้นไปกะพริบจางๆ พอมองเห็น"
+            PatternStep.WHITE_LEVEL_CONTRAST -> "ปรับ Contrast (ระดับสีขาว): แถบ 234 ต้องกะพริบมองเห็นได้ โดยไม่เพี้ยนหรือขาวล้น"
             PatternStep.SHARPNESS_GRID -> tip.sharpness
             PatternStep.GRAYSCALE_D65 -> tip.colorTemp
             PatternStep.MOTION_24P_JUDDER -> tip.motionSmoothing

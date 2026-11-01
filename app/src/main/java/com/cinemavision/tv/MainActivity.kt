@@ -38,6 +38,15 @@ class MainActivity : ComponentActivity() {
     internal lateinit var playerView: PlayerView
     internal lateinit var composeView: ComposeView
 
+    override fun attachBaseContext(newBase: android.content.Context) {
+        val locale = java.util.Locale("th", "TH")
+        java.util.Locale.setDefault(locale)
+        val config = android.content.res.Configuration(newBase.resources.configuration)
+        config.setLocale(locale)
+        val context = newBase.createConfigurationContext(config)
+        super.attachBaseContext(context)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 

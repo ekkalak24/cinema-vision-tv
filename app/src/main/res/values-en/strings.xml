@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CinemaVision TV</string>
+
+    <!-- Calibration Steps -->
+    <string name="step_picture_mode">1. Base Picture Mode</string>
+    <string name="step_picture_mode_desc">Select Movie / Custom / Filmmaker Mode to disable exaggerated factory processing.</string>
+    <string name="step_aspect_ratio">2. 1:1 Pixel Mapping &amp; Overscan</string>
+    <string name="step_aspect_ratio_desc">Disable overscan: ensure guide arrows touch screen edges and 1-pixel border is fully visible.</string>
+    <string name="step_black_level">3. Black Level &amp; Shadow Detail (PLUGE)</string>
+    <string name="step_black_level_desc">Adjust Brightness: ensure bar 16 blends into background while bar 17+ flashes faintly.</string>
+    <string name="step_white_level">4. White Level &amp; Highlight Clipping</string>
+    <string name="step_white_level_desc">Adjust Contrast: preserve highlights up to bar 234 without clipping or color tint.</string>
+    <string name="step_sharpness">5. Sharpness &amp; Edge Ringing</string>
+    <string name="step_sharpness_desc">Lower Sharpness until white halo lines vanish from edges and pixel grid remains crisp.</string>
+    <string name="step_grayscale">6. D65 White Balance &amp; Grayscale</string>
+    <string name="step_grayscale_desc">Set Color Temperature to Warm / Expert 1 (target D65 6500K) for natural skin tones.</string>
+    <string name="step_motion_judder">7. 24p Film Cadence &amp; Motion Processing</string>
+    <string name="step_motion_judder_desc">Turn OFF Motion Smoothing (TruMotion/Motionflow/MEMC) to restore native 24fps cinematic film cadence.</string>
+
+    <!-- Cinema Accuracy Levels -->
+    <string name="level_factory_default">Factory Default</string>
+    <string name="level_improved">Improved</string>
+    <string name="level_high_fidelity">High Fidelity</string>
+    <string name="level_cinema_reference">Cinema Reference</string>
+
+    <!-- Cinema Accuracy Meter -->
+    <string name="hud_cinema_match">Cinema Reference Match</string>
+    <string name="hud_step_contribution">+%d%% toward Reference Standard</string>
+    <string name="hud_step_calibrated">Calibrated</string>
+    <string name="hud_step_uncalibrated">Not Calibrated</string>
+    <string name="hud_mark_calibrated">Mark as Calibrated</string>
+    <string name="hud_unmark_calibrated">Unmark</string>
+
+    <!-- Brand Selector -->
+    <string name="brand_selector_title">Brand Picture Guidance</string>
+    <string name="recommended_setting">Recommended Setting:</string>
+    <string name="brand_sony">Sony BRAVIA</string>
+    <string name="brand_tcl">TCL Google TV</string>
+    <string name="brand_hisense">Hisense VIDAA / Google TV</string>
+    <string name="brand_samsung">Samsung Box / Tizen</string>
+    <string name="brand_lg">LG Box / webOS</string>
+    <string name="brand_universal">Universal TV</string>
+    <string name="brand_switch_hint">▲ / ▼ Switch Brand</string>
+
+    <!-- Navigation & Hotkeys Hints -->
+    <string name="nav_prev_step">◄ Prev Step</string>
+    <string name="nav_next_step">Next Step ►</string>
+    <string name="nav_toggle_hud">OK: Mark Calibrated • BACK: Hide HUD • MENU: Color Range (16-235 / 0-255)</string>
+    <string name="nav_auto_hide_hint">HUD auto-hides after 6s for clean full-screen viewing</string>
+
+    <!-- Color Range Display -->
+    <string name="color_range_limited">Limited (16–235)</string>
+    <string name="color_range_full">Full RGB (0–255)</string>
+</resources>
