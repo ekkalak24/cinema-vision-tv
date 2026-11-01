@@ -34,6 +34,44 @@ class PatternCanvasEngine {
         textSize = 32f
     }
 
+    private val sharpnessWhitePaint = Paint().apply {
+        isAntiAlias = false
+        color = Color.WHITE
+        strokeWidth = 1f
+        style = Paint.Style.STROKE
+    }
+
+    private val sharpnessBlackPaint = Paint().apply {
+        isAntiAlias = false
+        color = Color.BLACK
+        strokeWidth = 1f
+        style = Paint.Style.STROKE
+    }
+
+    private val arrowPaint = Paint().apply {
+        isAntiAlias = false
+        style = Paint.Style.FILL_AND_STROKE
+        strokeWidth = 2f
+    }
+
+    private val gradientPaint = Paint().apply {
+        isAntiAlias = false
+        style = Paint.Style.FILL
+    }
+
+    private val whiteClipBoxRect = RectF()
+    private val d65RefBoxRect = RectF()
+
+    private var cachedGradientWidth = -1
+    private var cachedGradientRange: ColorRange? = null
+
+    companion object {
+        private val LIMITED_PLUGE_BARS = listOf(12, 14, 16, 17, 18, 19, 20, 24, 28)
+        private val FULL_PLUGE_BARS = listOf(0, 1, 2, 3, 4, 8, 12, 16)
+        private val LIMITED_WHITE_BARS = listOf(230, 232, 234, 238, 242)
+        private val FULL_WHITE_BARS = listOf(250, 252, 254, 255)
+    }
+
     /**
      * Dispatches rendering of the appropriate test pattern for the given [step].
      */
@@ -127,9 +165,9 @@ class PatternCanvasEngine {
         canvas.drawColor(Color.rgb(bgLuminance, bgLuminance, bgLuminance))
 
         val barValues = if (range == ColorRange.LIMITED) {
-            listOf(12, 14, 16, 17, 18, 19, 20, 24, 28)
+            LIMITED_PLUGE_BARS
         } else {
-            listOf(0, 1, 2, 3, 4, 8, 12, 16)
+            FULL_PLUGE_BARS
         }
 
         val rects = PatternGeometry.calculatePlugeBarRects(width, height, barValues.size)
@@ -182,7 +220,7 @@ class PatternCanvasEngine {
         canvas.drawColor(Color.rgb(bgLum, bgLum, bgLum))
 
         // Center reference white 235 box
-        val boxBounds = RectF(
+        whiteClipBoxRect.set(
             width * 0.12f,
             height * 0.18f,
             width * 0.88f,
@@ -190,13 +228,13 @@ class PatternCanvasEngine {
         )
         val refWhite = range.referenceWhite
         fillPaint.color = Color.rgb(refWhite, refWhite, refWhite)
-        canvas.drawRect(boxBounds, fillPaint)
+        canvas.drawRect(whiteClipBoxRect, fillPaint)
 
         // Highlight bars
         val highlightBars = if (range == ColorRange.LIMITED) {
-            listOf(230, 232, 234, 238, 242)
+            LIMITED_WHITE_BARS
         } else {
-            listOf(250, 252, 254, 255)
+            FULL_WHITE_BARS
         }
 
         val rects = PatternGeometry.calculatePlugeBarRects(width, height, highlightBars.size)
@@ -235,19 +273,6 @@ class PatternCanvasEngine {
         // 50% neutral gray
         canvas.drawColor(Color.rgb(128, 128, 128))
 
-        val whitePaint = Paint().apply {
-            isAntiAlias = false
-            color = Color.WHITE
-            strokeWidth = 1f
-            style = Paint.Style.STROKE
-        }
-        val blackPaint = Paint().apply {
-            isAntiAlias = false
-            color = Color.BLACK
-            strokeWidth = 1f
-            style = Paint.Style.STROKE
-        }
-
         // 1. Alternating 1-pixel vertical line mesh in left quadrant
         val vLeft = width * 0.08f
         val vRight = width * 0.35f
@@ -255,9 +280,9 @@ class PatternCanvasEngine {
         val vBottom = height * 0.75f
         var x = vLeft
         while (x < vRight) {
-            canvas.drawLine(x, vTop, x, vBottom, whitePaint)
+            canvas.drawLine(x, vTop, x, vBottom, sharpnessWhitePaint)
             if (x + 1f < vRight) {
-                canvas.drawLine(x + 1f, vTop, x + 1f, vBottom, blackPaint)
+                canvas.drawLine(x + 1f, vTop, x + 1f, vBottom, sharpnessBlackPaint)
             }
             x += 2f
         }
@@ -269,9 +294,9 @@ class PatternCanvasEngine {
         val hBottom = height * 0.75f
         var y = hTop
         while (y < hBottom) {
-            canvas.drawLine(hLeft, y, hRight, y, whitePaint)
+            canvas.drawLine(hLeft, y, hRight, y, sharpnessWhitePaint)
             if (y + 1f < hBottom) {
-                canvas.drawLine(hLeft, y + 1f, hRight, y + 1f, blackPaint)
+                canvas.drawLine(hLeft, y + 1f, hRight, y + 1f, sharpnessBlackPaint)
             }
             y += 2f
         }
@@ -283,7 +308,7 @@ class PatternCanvasEngine {
         var r = 16f
         var ringIndex = 0
         while (r < maxRadius) {
-            val ringPaint = if (ringIndex % 2 == 0) whitePaint else blackPaint
+            val ringPaint = if (ringIndex % 2 == 0) sharpnessWhitePaint else sharpnessBlackPaint
             canvas.drawCircle(cx, cy, r, ringPaint)
             r += 8f
             ringIndex++
@@ -295,8 +320,8 @@ class PatternCanvasEngine {
         for (i in 0 until 120 step 4) {
             val px = diagStartX + i
             val py = diagStartY + i
-            canvas.drawLine(px, py, px + 4f, py, whitePaint)
-            canvas.drawLine(px + 4f, py, px + 4f, py + 4f, blackPaint)
+            canvas.drawLine(px, py, px + 4f, py, sharpnessWhitePaint)
+            canvas.drawLine(px + 4f, py, px + 4f, py + 4f, sharpnessBlackPaint)
         }
 
         // Text
@@ -332,20 +357,20 @@ class PatternCanvasEngine {
         // 2. Bottom half: Continuous smooth linear gradient from black level to reference white
         val startColor = Color.rgb(range.blackLevel, range.blackLevel, range.blackLevel)
         val endColor = Color.rgb(range.referenceWhite, range.referenceWhite, range.referenceWhite)
-        val gradientShader = LinearGradient(
-            0f,
-            0f,
-            width.toFloat(),
-            0f,
-            startColor,
-            endColor,
-            Shader.TileMode.CLAMP
-        )
 
-        val gradientPaint = Paint().apply {
-            isAntiAlias = false
-            shader = gradientShader
-            style = Paint.Style.FILL
+        if (cachedGradientWidth != width || cachedGradientRange != range) {
+            val gradientShader = LinearGradient(
+                0f,
+                0f,
+                width.toFloat(),
+                0f,
+                startColor,
+                endColor,
+                Shader.TileMode.CLAMP
+            )
+            gradientPaint.shader = gradientShader
+            cachedGradientWidth = width
+            cachedGradientRange = range
         }
         canvas.drawRect(0f, height / 2f, width.toFloat(), height.toFloat(), gradientPaint)
 
@@ -354,7 +379,7 @@ class PatternCanvasEngine {
         val cy = height / 2f
         val boxWidth = width * 0.16f
         val boxHeight = height * 0.14f
-        val refBox = RectF(
+        d65RefBoxRect.set(
             cx - boxWidth / 2f,
             cy - boxHeight / 2f,
             cx + boxWidth / 2f,
@@ -363,18 +388,18 @@ class PatternCanvasEngine {
 
         val refWhite = range.referenceWhite
         fillPaint.color = Color.rgb(refWhite, refWhite, refWhite)
-        canvas.drawRect(refBox, fillPaint)
+        canvas.drawRect(d65RefBoxRect, fillPaint)
 
         // 1-pixel border around reference white box
         strokePaint.color = Color.BLACK
         strokePaint.strokeWidth = 2f
-        canvas.drawRect(refBox, strokePaint)
+        canvas.drawRect(d65RefBoxRect, strokePaint)
 
         // D65 reference text
         textPaint.color = Color.BLACK
         textPaint.textSize = 24f
-        canvas.drawText("D65 Reference White", refBox.left + 15f, cy, textPaint)
-        canvas.drawText("100% Rec.709 ($refWhite)", refBox.left + 25f, cy + 30f, textPaint)
+        canvas.drawText("D65 Reference White", d65RefBoxRect.left + 15f, cy, textPaint)
+        canvas.drawText("100% Rec.709 ($refWhite)", d65RefBoxRect.left + 25f, cy + 30f, textPaint)
     }
 
     private fun drawArrow(
@@ -385,12 +410,7 @@ class PatternCanvasEngine {
         toY: Float,
         arrowColor: Int
     ) {
-        val arrowPaint = Paint().apply {
-            isAntiAlias = false
-            color = arrowColor
-            style = Paint.Style.FILL_AND_STROKE
-            strokeWidth = 2f
-        }
+        arrowPaint.color = arrowColor
         canvas.drawLine(fromX, fromY, toX, toY, arrowPaint)
     }
 }
