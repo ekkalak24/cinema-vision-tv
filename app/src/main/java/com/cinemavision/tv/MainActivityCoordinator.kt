@@ -84,6 +84,17 @@ class MainActivityCoordinator(
     val playerTarget: PlayerDisplayTarget
 ) {
 
+    /**
+     * Tracks the last synchronized pattern step to prevent redundant layer modifications
+     * when HUD visibility or non-pattern state changes.
+     */
+    var lastStep: PatternStep? = null
+
+    /**
+     * Tracks the last synchronized color range to avoid redundant canvas invalidation.
+     */
+    var lastColorRange: ColorRange? = null
+
     constructor(
         hudState: HudState,
         playerManager: JudderPlayerManager,
@@ -107,12 +118,21 @@ class MainActivityCoordinator(
 
     /**
      * Synchronizes display layers with the active [HudState]:
+     * - Only modifies display target visibilities, ExoPlayer playback, and pattern rendering
+     *   if [hudState.currentStep] or [hudState.colorRange] has actually changed.
      * - If [PatternStep.MOTION_24P_JUDDER], displays and plays the Media3 judder video, dimming the pattern view.
      * - Otherwise, hides and pauses the judder player, displaying the corresponding test pattern on canvas.
      */
-    fun syncWithState() {
+    fun syncWithState(force: Boolean = false) {
         val step = hudState.currentStep
         val range = hudState.colorRange
+
+        if (!force && step == lastStep && range == lastColorRange) {
+            return
+        }
+
+        lastStep = step
+        lastColorRange = range
 
         if (step == PatternStep.MOTION_24P_JUDDER) {
             playerTarget.isVisible = true

@@ -46,7 +46,7 @@
     <!-- Navigation & Hotkeys Hints -->
     <string name="nav_prev_step">◄ Prev Step</string>
     <string name="nav_next_step">Next Step ►</string>
-    <string name="nav_toggle_hud">OK: Mark Calibrated • BACK: Hide HUD</string>
+    <string name="nav_toggle_hud">OK: Mark Calibrated • BACK: Hide HUD • MENU: Color Range (16-235 / 0-255)</string>
     <string name="nav_auto_hide_hint">HUD auto-hides after 6 seconds of inactivity</string>
     <string name="nav_color_range">Color Range</string>
     <string name="color_range_limited">Limited (16-235)</string>

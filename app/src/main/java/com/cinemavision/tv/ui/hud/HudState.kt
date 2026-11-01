@@ -33,45 +33,50 @@ class HudState(
      * Listener callback invoked whenever any HUD property or visibility state changes,
      * ensuring seamless Compose UI reactivity and recomposition across remote interactions.
      */
+    @Volatile
     var onStateChanged: (() -> Unit)? = null
 
     /**
      * Whether the interactive HUD overlay is currently visible to the viewer.
      */
+    @Volatile
     var isHudVisible: Boolean = true
         internal set
 
     /**
      * Currently active test pattern calibration step (1..7).
      */
+    @Volatile
     var currentStep: PatternStep = PatternStep.PICTURE_MODE_BASE
         internal set
 
     /**
      * Selected TV brand for manufacturer-specific menu setting instructions.
      */
+    @Volatile
     var selectedBrand: TvBrand = TvBrand.SONY
         internal set
 
     /**
      * Active video signal color range (LIMITED 16-235 standard or FULL 0-255).
      */
+    @Volatile
     var colorRange: ColorRange = ColorRange.LIMITED
         internal set
 
-    private val _calibratedSteps = mutableSetOf<PatternStep>()
+    private val _calibratedSteps = java.util.Collections.synchronizedSet(mutableSetOf<PatternStep>())
 
     /**
      * Set of steps verified and marked as calibrated by the user.
      */
     val calibratedSteps: Set<PatternStep>
-        get() = _calibratedSteps.toSet()
+        get() = synchronized(_calibratedSteps) { _calibratedSteps.toSet() }
 
     /**
      * Current Cinema Reference Accuracy Match percentage (baseline ~35% up to 100%).
      */
     val accuracyPercent: Int
-        get() = CinemaAccuracyCalculator.calculateAccuracy(_calibratedSteps)
+        get() = CinemaAccuracyCalculator.calculateAccuracy(calibratedSteps)
 
     /**
      * High-level cinema fidelity tier (Factory Default, Improved, High Fidelity, Cinema Reference).
@@ -89,7 +94,7 @@ class HudState(
      * Indicates whether the active calibration step has been verified and calibrated.
      */
     val isCurrentStepCalibrated: Boolean
-        get() = _calibratedSteps.contains(currentStep)
+        get() = isStepCalibrated(currentStep)
 
     /**
      * Contextual menu setting tip for the currently active brand and step.
@@ -104,25 +109,31 @@ class HudState(
     }
 
     /**
-     * Notifies registered observers of any HUD state modification.
+     * Notifies registered observers of any HUD state modification safely.
      */
     private fun notifyStateChanged() {
-        onStateChanged?.invoke()
+        try {
+            onStateChanged?.invoke()
+        } catch (_: Throwable) {
+            // Prevent unhandled listener exceptions from crashing UI or background timers
+        }
     }
 
     /**
      * Checks if the specified [step] has been marked as calibrated.
      */
-    fun isStepCalibrated(step: PatternStep): Boolean = _calibratedSteps.contains(step)
+    fun isStepCalibrated(step: PatternStep): Boolean = synchronized(_calibratedSteps) { _calibratedSteps.contains(step) }
 
     /**
      * Updates the calibration verification status of [step].
      */
     fun setStepCalibrated(step: PatternStep, calibrated: Boolean) {
-        if (calibrated) {
-            _calibratedSteps.add(step)
-        } else {
-            _calibratedSteps.remove(step)
+        synchronized(_calibratedSteps) {
+            if (calibrated) {
+                _calibratedSteps.add(step)
+            } else {
+                _calibratedSteps.remove(step)
+            }
         }
         onUserInteraction()
     }
@@ -264,23 +275,36 @@ class HudState(
         if (autoHideDelayMs > 0 && isHudVisible) {
             val scope = coroutineScope ?: CoroutineScope(Dispatchers.Default)
             autoHideJob = scope.launch {
-                delay(autoHideDelayMs)
-                isHudVisible = false
-                notifyStateChanged()
+                try {
+                    delay(autoHideDelayMs)
+                    isHudVisible = false
+                    notifyStateChanged()
+                } catch (_: kotlinx.coroutines.CancellationException) {
+                    // Normal coroutine cancellation
+                } catch (_: Throwable) {
+                    // Safe guard against background coroutine exceptions
+                }
             }
         }
     }
 
     /**
-     * Cancels any active auto-hide countdown coroutine.
+     * Cancels any active auto-hide countdown coroutine safely.
      */
     fun cancelAutoHideTimer() {
-        autoHideJob?.cancel()
-        autoHideJob = null
+        try {
+            autoHideJob?.cancel()
+        } catch (_: Throwable) {
+        } finally {
+            autoHideJob = null
+        }
     }
 
     /**
      * Dispatches TV remote D-Pad and Navigation key events to HUD actions:
+     *
+     * Remote Color Range Shortcut (Both Visible & Hidden):
+     * - `MENU` / `INFO`: Toggle color range (16-235 Limited / 0-255 Full)
      *
      * When HUD is Visible:
      * - `DPAD_CENTER` / `ENTER`: Toggle calibration verification status on [currentStep]
@@ -301,6 +325,12 @@ class HudState(
      * Returns true if the key event was consumed by navigation, false otherwise.
      */
     fun handleKeyEvent(keyCode: Int): Boolean {
+        // Dedicated shortcut for color range toggle on TV remotes
+        if (keyCode == KeyEvent.KEYCODE_MENU || keyCode == KeyEvent.KEYCODE_INFO) {
+            toggleColorRange()
+            return true
+        }
+
         if (!isHudVisible) {
             return when (keyCode) {
                 KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {

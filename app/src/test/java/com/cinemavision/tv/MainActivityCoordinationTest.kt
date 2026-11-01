@@ -264,6 +264,79 @@ class MainActivityCoordinationTest {
         assertNull("Player should be released onDestroy", playerManager.player)
     }
 
+    @Test
+    fun testRemoteMenuAndInfoKeysToggleColorRangeAndSync() {
+        assertEquals(ColorRange.LIMITED, patternTarget.colorRange)
+        assertEquals(ColorRange.LIMITED, coordinator.lastColorRange)
+
+        // Remote KEYCODE_MENU toggles range to FULL
+        assertTrue(coordinator.handleKeyEvent(KeyEvent.KEYCODE_MENU, KeyEvent.ACTION_DOWN))
+        assertEquals(ColorRange.FULL, hudState.colorRange)
+        assertEquals(ColorRange.FULL, patternTarget.colorRange)
+        assertEquals(ColorRange.FULL, coordinator.lastColorRange)
+
+        // Remote KEYCODE_INFO toggles range back to LIMITED
+        assertTrue(coordinator.handleKeyEvent(KeyEvent.KEYCODE_INFO, KeyEvent.ACTION_DOWN))
+        assertEquals(ColorRange.LIMITED, hudState.colorRange)
+        assertEquals(ColorRange.LIMITED, patternTarget.colorRange)
+        assertEquals(ColorRange.LIMITED, coordinator.lastColorRange)
+
+        // Dispatch via KeyEvent object
+        val menuEvent = KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MENU)
+        assertTrue(coordinator.dispatchKeyEvent(menuEvent))
+        assertEquals(ColorRange.FULL, patternTarget.colorRange)
+    }
+
+    @Test
+    fun testStateChangeOptimizationAvoidsRedundantLayerMutations() {
+        // Upon initialization, syncWithState() ran once
+        assertEquals(1, patternTarget.renderRequestCount)
+        assertEquals(PatternStep.PICTURE_MODE_BASE, coordinator.lastStep)
+        assertEquals(ColorRange.LIMITED, coordinator.lastColorRange)
+
+        // Toggling HUD visibility should NOT request render or modify pattern view
+        hudState.hideHud()
+        assertEquals("Hiding HUD must not trigger canvas re-render", 1, patternTarget.renderRequestCount)
+
+        hudState.showHud()
+        assertEquals("Showing HUD must not trigger canvas re-render", 1, patternTarget.renderRequestCount)
+
+        hudState.toggleHudVisibility()
+        assertEquals("Toggling HUD visibility must not trigger canvas re-render", 1, patternTarget.renderRequestCount)
+
+        // Changing brand guidance should NOT re-render pattern canvas
+        hudState.nextBrand()
+        assertEquals("Brand change must not trigger canvas re-render", 1, patternTarget.renderRequestCount)
+
+        // Toggling step calibrated verification should NOT re-render pattern canvas
+        hudState.toggleStepCalibrated()
+        assertEquals("Calibrated step toggle must not trigger canvas re-render", 1, patternTarget.renderRequestCount)
+
+        // Only changing step should request a new render
+        hudState.nextStep()
+        assertEquals("Navigating to next step must trigger canvas render", 2, patternTarget.renderRequestCount)
+        assertEquals(PatternStep.ASPECT_RATIO, coordinator.lastStep)
+
+        // Only toggling color range should request a new render
+        coordinator.handleKeyEvent(KeyEvent.KEYCODE_MENU, KeyEvent.ACTION_DOWN)
+        assertEquals("Color range toggle must trigger canvas render", 3, patternTarget.renderRequestCount)
+        assertEquals(ColorRange.FULL, coordinator.lastColorRange)
+
+        // Transitioning to 24p Judder video
+        hudState.setStep(PatternStep.MOTION_24P_JUDDER)
+        assertTrue(playerTarget.isVisible)
+        assertTrue(playerManager.isPlaying)
+        assertFalse(patternTarget.isVisible)
+
+        // While video is playing on Judder step, hiding HUD must not pause or re-attach player
+        hudState.hideHud()
+        assertTrue("Player should continue playing smoothly when HUD auto-hides", playerManager.isPlaying)
+        assertTrue("Player target should remain visible when HUD auto-hides", playerTarget.isVisible)
+
+        hudState.showHud()
+        assertTrue("Player should continue playing when HUD is shown again", playerManager.isPlaying)
+    }
+
     /**
      * Fake target representing PatternSurfaceView for testing state changes without native rendering.
      */

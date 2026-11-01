@@ -94,16 +94,20 @@ class PatternSurfaceView @JvmOverloads constructor(
     private fun startRenderLoop() {
         renderJob?.cancel()
         renderJob = CoroutineScope(Dispatchers.Default).launch {
-            var lastFlashToggle = System.currentTimeMillis()
             while (isActive && isSurfaceAvailable) {
-                val now = System.currentTimeMillis()
-                if (now - lastFlashToggle >= 500L) {
+                val step = currentStep
+                val isFlashingStep = step == PatternStep.BLACK_LEVEL_PLUGE || step == PatternStep.WHITE_LEVEL_CONTRAST
+
+                if (isFlashingStep) {
                     flashState = !flashState
-                    lastFlashToggle = now
                 }
+
                 renderFrame()
-                // Render pacing aligned with ~60Hz refresh rate (16ms)
-                delay(16L)
+
+                // Render pacing: 500ms delay on static pattern steps (PICTURE_MODE_BASE, ASPECT_RATIO,
+                // SHARPNESS_GRID, GRAYSCALE_D65) and 500ms per flash toggle on flashing steps (PLUGE,
+                // WHITE_LEVEL_CONTRAST) to conserve SoC memory bandwidth on 4K TV panels.
+                delay(500L)
             }
         }
     }

@@ -275,6 +275,25 @@ class HudStateTest {
         assertFalse("BACK when hidden should return false for system back", state.handleKeyEvent(KeyEvent.KEYCODE_BACK))
         assertFalse(state.isHudVisible)
 
+        // KEYCODE_MENU when hidden -> restores visibility and toggles color range to FULL
+        assertEquals(ColorRange.LIMITED, state.colorRange)
+        assertTrue(state.handleKeyEvent(KeyEvent.KEYCODE_MENU))
+        assertTrue("MENU when hidden should restore visibility", state.isHudVisible)
+        assertEquals(ColorRange.FULL, state.colorRange)
+
+        // Hide again
+        state.hideHud()
+        assertFalse(state.isHudVisible)
+
+        // KEYCODE_INFO when hidden -> restores visibility and toggles color range back to LIMITED
+        assertTrue(state.handleKeyEvent(KeyEvent.KEYCODE_INFO))
+        assertTrue(state.isHudVisible)
+        assertEquals(ColorRange.LIMITED, state.colorRange)
+
+        // Hide again
+        state.hideHud()
+        assertFalse(state.isHudVisible)
+
         // DPAD_CENTER when hidden -> unhides HUD
         assertTrue(state.handleKeyEvent(KeyEvent.KEYCODE_DPAD_CENTER))
         assertTrue("DPAD_CENTER when hidden should unhide HUD", state.isHudVisible)
@@ -359,5 +378,56 @@ class HudStateTest {
         assertFalse("HUD should auto-hide after 60ms delay", shortState.isHudVisible)
         assertTrue("onStateChanged should fire when auto-hide timer expires", stateChangedCalled)
         shortState.cancelAutoHideTimer()
+    }
+
+    @Test
+    fun testRemoteMenuAndInfoKeyTogglesColorRange() {
+        assertEquals(ColorRange.LIMITED, state.colorRange)
+
+        // KEYCODE_MENU toggles from LIMITED to FULL
+        assertTrue(state.handleKeyEvent(KeyEvent.KEYCODE_MENU))
+        assertEquals(ColorRange.FULL, state.colorRange)
+
+        // KEYCODE_INFO toggles from FULL back to LIMITED
+        assertTrue(state.handleKeyEvent(KeyEvent.KEYCODE_INFO))
+        assertEquals(ColorRange.LIMITED, state.colorRange)
+
+        // When HUD is hidden, KEYCODE_MENU toggles range and restores HUD visibility
+        state.hideHud()
+        assertFalse(state.isHudVisible)
+        assertTrue(state.handleKeyEvent(KeyEvent.KEYCODE_MENU))
+        assertEquals(ColorRange.FULL, state.colorRange)
+        assertTrue("HUD should become visible on remote shortcut", state.isHudVisible)
+
+        // When HUD is hidden, KEYCODE_INFO toggles range and restores HUD visibility
+        state.hideHud()
+        assertFalse(state.isHudVisible)
+        assertTrue(state.handleKeyEvent(KeyEvent.KEYCODE_INFO))
+        assertEquals(ColorRange.LIMITED, state.colorRange)
+        assertTrue("HUD should become visible on remote shortcut", state.isHudVisible)
+
+        state.cancelAutoHideTimer()
+    }
+
+    @Test
+    fun testSafeListenerInvocationDoesNotCrashOnException() {
+        state.onStateChanged = {
+            throw RuntimeException("Simulated UI or listener exception")
+        }
+
+        // Mutations should continue gracefully without unhandled exception crashing callers
+        assertTrue(state.nextStep())
+        assertEquals(PatternStep.ASPECT_RATIO, state.currentStep)
+
+        val newRange = state.toggleColorRange()
+        assertEquals(ColorRange.FULL, newRange)
+
+        state.hideHud()
+        assertFalse(state.isHudVisible)
+
+        state.showHud()
+        assertTrue(state.isHudVisible)
+
+        state.cancelAutoHideTimer()
     }
 }
