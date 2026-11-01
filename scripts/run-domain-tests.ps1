@@ -33,7 +33,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "> Task :app:test"
-& $java -cp "$outDir;$junitJar;$hamcrestJar;$kotlinStdlib;$layoutlibJar;$layoutlibApiJar;$coroutinesJar;$media3StubJar" org.junit.runner.JUnitCore com.cinemavision.tv.domain.ColorRangeTest com.cinemavision.tv.domain.PatternStepTest com.cinemavision.tv.domain.CinemaAccuracyCalculatorTest com.cinemavision.tv.domain.BrandGuidanceTest com.cinemavision.tv.ui.pattern.PatternGeometryTest com.cinemavision.tv.ui.player.JudderPlayerManagerTest com.cinemavision.tv.ui.hud.HudStateTest
+& $java -cp "$outDir;$junitJar;$hamcrestJar;$kotlinStdlib;$layoutlibJar;$layoutlibApiJar;$coroutinesJar;$media3StubJar" org.junit.runner.JUnitCore com.cinemavision.tv.domain.ColorRangeTest com.cinemavision.tv.domain.PatternStepTest com.cinemavision.tv.domain.CinemaAccuracyCalculatorTest com.cinemavision.tv.domain.BrandGuidanceTest com.cinemavision.tv.ui.pattern.PatternGeometryTest com.cinemavision.tv.ui.player.JudderPlayerManagerTest com.cinemavision.tv.ui.hud.HudStateTest com.cinemavision.tv.MainActivityCoordinationTest
 
 if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
