@@ -20,6 +20,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,29 +34,79 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cinemavision.tv.R
+import com.cinemavision.tv.domain.CinemaAccuracyLevel
 import com.cinemavision.tv.domain.ColorRange
 import com.cinemavision.tv.domain.PatternStep
+import com.cinemavision.tv.domain.TvBrand
 
 /**
  * Top-level Jetpack Compose for TV interactive Heads-Up Display (HUD) overlay.
  *
- * Floats over the background SurfaceView test pattern, auto-hiding after 6 seconds of
- * inactivity to allow unscaled, bit-accurate visual inspection.
- *
- * Provides:
- * - Step navigation pills ([1]..[7]) with active highlight and calibrated checkmark
- * - Live Cinema Match % meter with progress bar and tier badge
- * - Brand-specific TV setting instructions
- * - Detailed pattern adjustment guide
- * - Remote control D-pad hints
+ * Observes [hudState.onStateChanged] to trigger reactive recompositions on remote D-pad input
+ * and auto-hide events.
  */
 @Composable
 fun CalibrationHudOverlay(
     hudState: HudState,
     modifier: Modifier = Modifier
 ) {
+    var stateRevision by remember { mutableStateOf(0) }
+
+    DisposableEffect(hudState) {
+        val previousListener = hudState.onStateChanged
+        hudState.onStateChanged = {
+            previousListener?.invoke()
+            stateRevision++
+        }
+        onDispose {
+            hudState.onStateChanged = previousListener
+        }
+    }
+
+    if (stateRevision >= 0) {
+        CalibrationHudOverlay(
+            isHudVisible = hudState.isHudVisible,
+            currentStep = hudState.currentStep,
+            selectedBrand = hudState.selectedBrand,
+            colorRange = hudState.colorRange,
+            accuracyPercent = hudState.accuracyPercent,
+            accuracyLevel = hudState.accuracyLevel,
+            stepContribution = hudState.currentStepWeight,
+            isStepCalibrated = { step -> hudState.isStepCalibrated(step) },
+            onStepSelected = { step -> hudState.setStep(step) },
+            onColorRangeToggle = { hudState.toggleColorRange() },
+            onBrandSelected = { brand -> hudState.selectBrand(brand) },
+            onNextBrand = { hudState.nextBrand() },
+            onPreviousBrand = { hudState.previousBrand() },
+            onToggleCalibrated = { hudState.toggleStepCalibrated() },
+            modifier = modifier
+        )
+    }
+}
+
+/**
+ * Stateless variant of [CalibrationHudOverlay] accepting immutable primitive parameters.
+ */
+@Composable
+fun CalibrationHudOverlay(
+    isHudVisible: Boolean,
+    currentStep: PatternStep,
+    selectedBrand: TvBrand,
+    colorRange: ColorRange,
+    accuracyPercent: Int,
+    accuracyLevel: CinemaAccuracyLevel,
+    stepContribution: Int,
+    isStepCalibrated: (PatternStep) -> Boolean,
+    onStepSelected: (PatternStep) -> Unit,
+    onColorRangeToggle: () -> Unit,
+    onBrandSelected: (TvBrand) -> Unit,
+    onNextBrand: () -> Unit,
+    onPreviousBrand: () -> Unit,
+    onToggleCalibrated: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     AnimatedVisibility(
-        visible = hudState.isHudVisible,
+        visible = isHudVisible,
         enter = fadeIn(),
         exit = fadeOut(),
         modifier = modifier.fillMaxSize()
@@ -72,7 +127,13 @@ fun CalibrationHudOverlay(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // 1. Top Bar: App Title, Step Indicator Pills, and Color Range Badge
-                TopNavigationSection(hudState = hudState)
+                TopNavigationSection(
+                    currentStep = currentStep,
+                    colorRange = colorRange,
+                    isStepCalibrated = isStepCalibrated,
+                    onStepSelected = onStepSelected,
+                    onColorRangeToggle = onColorRangeToggle
+                )
 
                 // 2. Main Content Row: Brand Guidance (Left) + Cinema Accuracy Meter (Right)
                 Row(
@@ -80,25 +141,39 @@ fun CalibrationHudOverlay(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     BrandSelectorCard(
-                        hudState = hudState,
+                        selectedBrand = selectedBrand,
+                        currentStep = currentStep,
+                        onBrandSelected = onBrandSelected,
+                        onNextBrand = onNextBrand,
+                        onPreviousBrand = onPreviousBrand,
                         modifier = Modifier.weight(1f)
                     )
 
                     CinemaAccuracyMeter(
-                        hudState = hudState,
+                        accuracyPercent = accuracyPercent,
+                        accuracyLevel = accuracyLevel,
+                        stepContribution = stepContribution,
+                        isStepCalibrated = isStepCalibrated(currentStep),
+                        onToggleCalibrated = onToggleCalibrated,
                         modifier = Modifier.weight(1f)
                     )
                 }
 
                 // 3. Step Instruction & Remote Control Hints
-                BottomControlsSection(hudState = hudState)
+                BottomControlsSection(currentStep = currentStep)
             }
         }
     }
 }
 
 @Composable
-private fun TopNavigationSection(hudState: HudState) {
+private fun TopNavigationSection(
+    currentStep: PatternStep,
+    colorRange: ColorRange,
+    isStepCalibrated: (PatternStep) -> Boolean,
+    onStepSelected: (PatternStep) -> Unit,
+    onColorRangeToggle: () -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -136,18 +211,18 @@ private fun TopNavigationSection(hudState: HudState) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             PatternStep.values().forEach { step ->
-                val isActive = (step == hudState.currentStep)
-                val isCalibrated = hudState.isStepCalibrated(step)
+                val isActive = (step == currentStep)
+                val calibrated = isStepCalibrated(step)
 
                 val pillBg = when {
                     isActive -> Color(0xFF0284C7)
-                    isCalibrated -> Color(0xFF15803D)
+                    calibrated -> Color(0xFF15803D)
                     else -> Color(0xFF1E293B)
                 }
 
                 val pillBorder = when {
                     isActive -> Color(0xFF38BDF8)
-                    isCalibrated -> Color(0xFF22C55E)
+                    calibrated -> Color(0xFF22C55E)
                     else -> Color(0xFF334155)
                 }
 
@@ -156,7 +231,7 @@ private fun TopNavigationSection(hudState: HudState) {
                         .clip(RoundedCornerShape(6.dp))
                         .background(pillBg)
                         .border(1.dp, pillBorder, RoundedCornerShape(6.dp))
-                        .clickable { hudState.setStep(step) }
+                        .clickable { onStepSelected(step) }
                         .focusable()
                         .padding(horizontal = 10.dp, vertical = 6.dp),
                     contentAlignment = Alignment.Center
@@ -171,7 +246,7 @@ private fun TopNavigationSection(hudState: HudState) {
                             fontSize = 12.sp,
                             fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium
                         )
-                        if (isCalibrated) {
+                        if (calibrated) {
                             Text(
                                 text = "✓",
                                 color = Color(0xFF86EFAC),
@@ -190,12 +265,12 @@ private fun TopNavigationSection(hudState: HudState) {
                 .clip(RoundedCornerShape(6.dp))
                 .background(Color(0xFF1E293B))
                 .border(1.dp, Color(0xFF334155), RoundedCornerShape(6.dp))
-                .clickable { hudState.toggleColorRange() }
+                .clickable { onColorRangeToggle() }
                 .focusable()
                 .padding(horizontal = 10.dp, vertical = 6.dp)
         ) {
             Text(
-                text = if (hudState.colorRange == ColorRange.LIMITED) {
+                text = if (colorRange == ColorRange.LIMITED) {
                     stringResource(R.string.color_range_limited)
                 } else {
                     stringResource(R.string.color_range_full)
@@ -209,8 +284,8 @@ private fun TopNavigationSection(hudState: HudState) {
 }
 
 @Composable
-private fun BottomControlsSection(hudState: HudState) {
-    val stepTitle = when (hudState.currentStep) {
+private fun BottomControlsSection(currentStep: PatternStep) {
+    val stepTitle = when (currentStep) {
         PatternStep.PICTURE_MODE_BASE -> stringResource(R.string.step_picture_mode)
         PatternStep.ASPECT_RATIO -> stringResource(R.string.step_aspect_ratio)
         PatternStep.BLACK_LEVEL_PLUGE -> stringResource(R.string.step_black_level)
@@ -220,7 +295,7 @@ private fun BottomControlsSection(hudState: HudState) {
         PatternStep.MOTION_24P_JUDDER -> stringResource(R.string.step_motion_judder)
     }
 
-    val stepDesc = when (hudState.currentStep) {
+    val stepDesc = when (currentStep) {
         PatternStep.PICTURE_MODE_BASE -> stringResource(R.string.step_picture_mode_desc)
         PatternStep.ASPECT_RATIO -> stringResource(R.string.step_aspect_ratio_desc)
         PatternStep.BLACK_LEVEL_PLUGE -> stringResource(R.string.step_black_level_desc)

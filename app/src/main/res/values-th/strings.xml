@@ -34,6 +34,7 @@
 
     <!-- Brand Selector -->
     <string name="brand_selector_title">คำแนะนำเมนูตามยี่ห้อทีวี</string>
+    <string name="recommended_setting">การตั้งค่าที่แนะนำ:</string>
     <string name="brand_sony">Sony Bravia</string>
     <string name="brand_tcl">TCL Google TV</string>
     <string name="brand_hisense">Hisense VIDAA / Google TV</string>
@@ -45,7 +46,7 @@
     <!-- Navigation & Hotkeys Hints -->
     <string name="nav_prev_step">◄ ขั้นตอนก่อนหน้า</string>
     <string name="nav_next_step">ขั้นตอนถัดไป ►</string>
-    <string name="nav_toggle_hud">OK / กลาง: ซ่อน/แสดง HUD</string>
+    <string name="nav_toggle_hud">OK: ทำเครื่องหมาย • BACK: ซ่อน HUD</string>
     <string name="nav_auto_hide_hint">HUD จะซ่อนอัตโนมัติใน 6 วินาทีเพื่อตรวจเช็กภาพเต็มตา</string>
     <string name="nav_color_range">ช่วงสัญญาณสี</string>
     <string name="color_range_limited">Limited (16-235)</string>

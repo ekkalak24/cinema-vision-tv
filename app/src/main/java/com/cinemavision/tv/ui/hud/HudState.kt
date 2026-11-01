@@ -30,6 +30,12 @@ class HudState(
     private val coroutineScope: CoroutineScope? = null
 ) {
     /**
+     * Listener callback invoked whenever any HUD property or visibility state changes,
+     * ensuring seamless Compose UI reactivity and recomposition across remote interactions.
+     */
+    var onStateChanged: (() -> Unit)? = null
+
+    /**
      * Whether the interactive HUD overlay is currently visible to the viewer.
      */
     var isHudVisible: Boolean = true
@@ -95,6 +101,13 @@ class HudState(
 
     init {
         startAutoHideTimer()
+    }
+
+    /**
+     * Notifies registered observers of any HUD state modification.
+     */
+    private fun notifyStateChanged() {
+        onStateChanged?.invoke()
     }
 
     /**
@@ -212,6 +225,7 @@ class HudState(
         } else {
             cancelAutoHideTimer()
         }
+        notifyStateChanged()
         return isHudVisible
     }
 
@@ -221,6 +235,7 @@ class HudState(
     fun showHud() {
         isHudVisible = true
         startAutoHideTimer()
+        notifyStateChanged()
     }
 
     /**
@@ -229,6 +244,7 @@ class HudState(
     fun hideHud() {
         isHudVisible = false
         cancelAutoHideTimer()
+        notifyStateChanged()
     }
 
     /**
@@ -237,6 +253,7 @@ class HudState(
     fun onUserInteraction() {
         isHudVisible = true
         startAutoHideTimer()
+        notifyStateChanged()
     }
 
     /**
@@ -249,6 +266,7 @@ class HudState(
             autoHideJob = scope.launch {
                 delay(autoHideDelayMs)
                 isHudVisible = false
+                notifyStateChanged()
             }
         }
     }
@@ -262,19 +280,65 @@ class HudState(
     }
 
     /**
-     * Dispatches TV remote D-Pad key events to HUD navigation.
+     * Dispatches TV remote D-Pad and Navigation key events to HUD actions:
      *
+     * When HUD is Visible:
+     * - `DPAD_CENTER` / `ENTER`: Toggle calibration verification status on [currentStep]
+     * - `BACK`: Hide the HUD overlay
      * - `DPAD_LEFT`: Previous step
      * - `DPAD_RIGHT`: Next step
      * - `DPAD_UP`: Previous brand
      * - `DPAD_DOWN`: Next brand
-     * - `DPAD_CENTER` / `ENTER`: Toggle HUD visibility
-     * - `KEYCODE_C`: Toggle step calibrated status
+     *
+     * When HUD is Hidden:
+     * - `DPAD_CENTER` / `ENTER`: Show the HUD overlay
+     * - `DPAD_LEFT`: Move to previous step and unhide HUD
+     * - `DPAD_RIGHT`: Move to next step and unhide HUD
+     * - `DPAD_UP`: Move to previous brand and unhide HUD
+     * - `DPAD_DOWN`: Move to next brand and unhide HUD
+     * - `BACK`: Returns false (leaves unconsumed for system back / app exit)
      *
      * Returns true if the key event was consumed by navigation, false otherwise.
      */
     fun handleKeyEvent(keyCode: Int): Boolean {
+        if (!isHudVisible) {
+            return when (keyCode) {
+                KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
+                    showHud()
+                    true
+                }
+                KeyEvent.KEYCODE_DPAD_LEFT -> {
+                    previousStep()
+                    true
+                }
+                KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                    nextStep()
+                    true
+                }
+                KeyEvent.KEYCODE_DPAD_UP -> {
+                    previousBrand()
+                    true
+                }
+                KeyEvent.KEYCODE_DPAD_DOWN -> {
+                    nextBrand()
+                    true
+                }
+                KeyEvent.KEYCODE_BACK -> {
+                    false
+                }
+                else -> false
+            }
+        }
+
         return when (keyCode) {
+            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
+                toggleStepCalibrated(currentStep)
+                true
+            }
+            KeyEvent.KEYCODE_BACK -> {
+                hideHud()
+                true
+            }
             KeyEvent.KEYCODE_DPAD_LEFT -> {
                 previousStep()
                 true
@@ -289,14 +353,6 @@ class HudState(
             }
             KeyEvent.KEYCODE_DPAD_DOWN -> {
                 nextBrand()
-                true
-            }
-            KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                toggleHudVisibility()
-                true
-            }
-            KeyEvent.KEYCODE_C -> {
-                toggleStepCalibrated()
                 true
             }
             else -> false

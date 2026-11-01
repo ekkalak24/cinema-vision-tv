@@ -151,7 +151,7 @@ fun BrandSelectorCard(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    text = "Recommended Setting:",
+                    text = stringResource(R.string.recommended_setting),
                     color = Color(0xFF00E5FF),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold

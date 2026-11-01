@@ -237,6 +237,19 @@ class HudStateTest {
 
     @Test
     fun testHandleKeyEventNavigation() {
+        // 1. When HUD is visible:
+        assertTrue(state.isHudVisible)
+        assertEquals(PatternStep.PICTURE_MODE_BASE, state.currentStep)
+        assertFalse(state.isCurrentStepCalibrated)
+
+        // DPAD_CENTER -> toggle calibrated status of current step
+        assertTrue(state.handleKeyEvent(KeyEvent.KEYCODE_DPAD_CENTER))
+        assertTrue("OK/Center should toggle current step calibration", state.isCurrentStepCalibrated)
+
+        // DPAD_CENTER again -> unmarks current step calibration
+        assertTrue(state.handleKeyEvent(KeyEvent.KEYCODE_ENTER))
+        assertFalse(state.isCurrentStepCalibrated)
+
         // DPAD_RIGHT -> next step
         assertTrue(state.handleKeyEvent(KeyEvent.KEYCODE_DPAD_RIGHT))
         assertEquals(PatternStep.ASPECT_RATIO, state.currentStep)
@@ -245,8 +258,29 @@ class HudStateTest {
         assertTrue(state.handleKeyEvent(KeyEvent.KEYCODE_DPAD_LEFT))
         assertEquals(PatternStep.PICTURE_MODE_BASE, state.currentStep)
 
-        // DPAD_CENTER -> toggle HUD
+        // DPAD_DOWN -> next brand
+        assertTrue(state.handleKeyEvent(KeyEvent.KEYCODE_DPAD_DOWN))
+        assertEquals(TvBrand.TCL, state.selectedBrand)
+
+        // DPAD_UP -> previous brand
+        assertTrue(state.handleKeyEvent(KeyEvent.KEYCODE_DPAD_UP))
+        assertEquals(TvBrand.SONY, state.selectedBrand)
+
+        // KEYCODE_BACK when visible -> hides HUD
+        assertTrue(state.handleKeyEvent(KeyEvent.KEYCODE_BACK))
+        assertFalse("BACK key should hide visible HUD", state.isHudVisible)
+
+        // 2. When HUD is hidden:
+        // KEYCODE_BACK when already hidden -> does not consume (returns false for system back)
+        assertFalse("BACK when hidden should return false for system back", state.handleKeyEvent(KeyEvent.KEYCODE_BACK))
+        assertFalse(state.isHudVisible)
+
+        // DPAD_CENTER when hidden -> unhides HUD
         assertTrue(state.handleKeyEvent(KeyEvent.KEYCODE_DPAD_CENTER))
+        assertTrue("DPAD_CENTER when hidden should unhide HUD", state.isHudVisible)
+
+        // Hide again
+        state.hideHud()
         assertFalse(state.isHudVisible)
 
         // DPAD_RIGHT when hidden -> restores visibility and moves to next step
@@ -254,16 +288,76 @@ class HudStateTest {
         assertTrue("DPAD navigation should restore HUD visibility", state.isHudVisible)
         assertEquals(PatternStep.ASPECT_RATIO, state.currentStep)
 
-        // DPAD_DOWN -> next brand
-        assertTrue(state.handleKeyEvent(KeyEvent.KEYCODE_DPAD_DOWN))
-        assertEquals(TvBrand.TCL, state.selectedBrand)
+        // Hide again
+        state.hideHud()
 
-        // KEYCODE_C -> toggle calibration
-        assertTrue(state.handleKeyEvent(KeyEvent.KEYCODE_C))
-        assertTrue(state.isStepCalibrated(PatternStep.ASPECT_RATIO))
+        // DPAD_DOWN when hidden -> restores visibility and switches brand
+        assertTrue(state.handleKeyEvent(KeyEvent.KEYCODE_DPAD_DOWN))
+        assertTrue(state.isHudVisible)
+        assertEquals(TvBrand.TCL, state.selectedBrand)
 
         // Unknown key -> not handled
         assertFalse(state.handleKeyEvent(KeyEvent.KEYCODE_VOLUME_UP))
         state.cancelAutoHideTimer()
+    }
+
+    @Test
+    fun testOnStateChangedCallbackFiresOnMutations() {
+        var callCount = 0
+        state.onStateChanged = { callCount++ }
+
+        state.nextStep()
+        assertEquals(1, callCount)
+
+        state.previousStep()
+        assertEquals(2, callCount)
+
+        state.setStep(PatternStep.SHARPNESS_GRID)
+        assertEquals(3, callCount)
+
+        state.selectBrand(TvBrand.LG_BOX)
+        assertEquals(4, callCount)
+
+        state.nextBrand()
+        assertEquals(5, callCount)
+
+        state.previousBrand()
+        assertEquals(6, callCount)
+
+        state.toggleStepCalibrated()
+        assertEquals(7, callCount)
+
+        state.setStepCalibrated(PatternStep.ASPECT_RATIO, true)
+        assertEquals(8, callCount)
+
+        state.toggleColorRange()
+        assertEquals(9, callCount)
+
+        state.hideHud()
+        assertEquals(10, callCount)
+
+        state.showHud()
+        assertEquals(11, callCount)
+
+        state.toggleHudVisibility()
+        assertEquals(12, callCount)
+
+        state.cancelAutoHideTimer()
+    }
+
+    @Test
+    fun testOnStateChangedFiresWhenAutoHideTimerExpires() {
+        val shortState = HudState(autoHideDelayMs = 60L)
+        var stateChangedCalled = false
+        shortState.onStateChanged = {
+            stateChangedCalled = true
+        }
+
+        assertTrue(shortState.isHudVisible)
+        Thread.sleep(120L)
+
+        assertFalse("HUD should auto-hide after 60ms delay", shortState.isHudVisible)
+        assertTrue("onStateChanged should fire when auto-hide timer expires", stateChangedCalled)
+        shortState.cancelAutoHideTimer()
     }
 }
