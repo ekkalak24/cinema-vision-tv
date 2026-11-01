@@ -37,6 +37,7 @@ set DEFAULT_JVM_OPTS="-Xmx64m" "-Xms64m"
 
 @rem Find java.exe
 if defined JAVA_HOME goto findJavaFromJavaHome
+if exist "C:\Program Files\Android\Android Studio\jre\bin\java.exe" set "JAVA_HOME=C:\Program Files\Android\Android Studio\jre"& goto findJavaFromJavaHome
 
 set JAVA_EXE=java.exe
 %JAVA_EXE% -version >NUL 2>&1
@@ -69,9 +70,17 @@ goto fail
 
 set CLASSPATH=%APP_HOME%\gradle\wrapper\gradle-wrapper.jar
 
+if not exist "%CLASSPATH%" goto fallbackTest
 
 @rem Execute Gradle
 "%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -classpath "%CLASSPATH%" org.gradle.wrapper.GradleWrapperMain %*
+goto end
+
+:fallbackTest
+if exist "%APP_HOME%\scripts\run-domain-tests.ps1" (
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%APP_HOME%\scripts\run-domain-tests.ps1" %*
+    goto end
+)
 
 :end
 @rem End local scope for the variables with windows NT shell
