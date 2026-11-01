@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CinemaVision TV</string>
+
+    <!-- Calibration Steps -->
+    <string name="step_picture_mode">1. โหมดภาพเริ่มต้น (Picture Mode)</string>
+    <string name="step_picture_mode_desc">เลือกโหมด Movie / Custom / Filmmaker Mode เพื่อปิดการประมวลผลภาพที่เกินจริงจากโรงงาน</string>
+    <string name="step_aspect_ratio">2. อัตราส่วนภาพและการครอบตัด (Aspect Ratio &amp; Overscan)</string>
+    <string name="step_aspect_ratio_desc">ปิด Overscan: ตรวจสอบให้ลูกศรแตะขอบจอพอดี และมองเห็นเส้นกรอบ 1 พิกเซลรอบจอครบถ้วน</string>
+    <string name="step_black_level">3. ระดับสีดำ (Brightness / PLUGE)</string>
+    <string name="step_black_level_desc">ปรับ Brightness: แถบ 16 ต้องกลืนสนิทกับพื้นหลัง แถบ 17 ขึ้นไปต้องกระพริบมองเห็นได้ชัดเจน</string>
+    <string name="step_white_level">4. ระดับสีขาว (Contrast / White Clipping)</string>
+    <string name="step_white_level_desc">ปรับ Contrast: มองเห็นแถบขาวได้ถึง 234 โดยไม่กลืนหายเป็นสีขาวล้วน และไม่มีสีเพี้ยน</string>
+    <string name="step_sharpness">5. ความคมชัดและเส้นเงา (Sharpness &amp; Anti-Ringing)</string>
+    <string name="step_sharpness_desc">ลด Sharpness จนไม่มีเส้นขอบขาวเรืองแสง (halo) รอบเส้นตาราง โดยที่รายละเอียดยังคมชัด</string>
+    <string name="step_grayscale">6. อุณหภูมิสี (D65 Grayscale)</string>
+    <string name="step_grayscale_desc">ตั้งค่าอุณหภูมิสีเป็น Warm / Expert 1 (เป้าหมาย D65 6500K) เพื่อโทนสีผิวธรรมชาติที่เที่ยงตรง</string>
+    <string name="step_motion_judder">7. การเคลื่อนไหว 24p และ Judder</string>
+    <string name="step_motion_judder_desc">ปิด Motion Smoothing (MEMC/TruMotion/Motionflow) เพื่อคงจังหวะฟิล์ม 24fps แท้จริง ไม่เกิดภาพลื่นแบบละครเวที</string>
+
+    <!-- Cinema Accuracy Levels -->
+    <string name="level_factory_default">ค่าเริ่มต้นจากโรงงาน (Factory Default)</string>
+    <string name="level_improved">ปรับปรุงแล้ว (Improved)</string>
+    <string name="level_high_fidelity">ความเที่ยงตรงสูง (High Fidelity)</string>
+    <string name="level_cinema_reference">มาตรฐานอ้างอิงโรงภาพยนตร์ (Cinema Reference)</string>
+
+    <!-- Cinema Accuracy Meter -->
+    <string name="hud_cinema_match">ความแม่นยำมาตรฐานภาพยนตร์</string>
+    <string name="hud_step_contribution">+%d%% สู่มาตรฐานอ้างอิง</string>
+    <string name="hud_step_calibrated">ปรับตั้งค่าแล้ว</string>
+    <string name="hud_step_uncalibrated">ยังไม่ได้ปรับ</string>
+    <string name="hud_mark_calibrated">ทำเครื่องหมายว่าปรับแล้ว</string>
+    <string name="hud_unmark_calibrated">ยกเลิกเครื่องหมาย</string>
+
+    <!-- Brand Selector -->
+    <string name="brand_selector_title">คำแนะนำเมนูตามยี่ห้อทีวี</string>
+    <string name="brand_sony">Sony Bravia</string>
+    <string name="brand_tcl">TCL Google TV</string>
+    <string name="brand_hisense">Hisense VIDAA / Google TV</string>
+    <string name="brand_samsung">Samsung Box / Tizen</string>
+    <string name="brand_lg">LG Box / webOS</string>
+    <string name="brand_universal">Universal / แบรนด์ทั่วไป</string>
+    <string name="brand_switch_hint">▲ / ▼ เปลี่ยนยี่ห้อ</string>
+
+    <!-- Navigation & Hotkeys Hints -->
+    <string name="nav_prev_step">◄ ขั้นตอนก่อนหน้า</string>
+    <string name="nav_next_step">ขั้นตอนถัดไป ►</string>
+    <string name="nav_toggle_hud">OK / กลาง: ซ่อน/แสดง HUD</string>
+    <string name="nav_auto_hide_hint">HUD จะซ่อนอัตโนมัติใน 6 วินาทีเพื่อตรวจเช็กภาพเต็มตา</string>
+    <string name="nav_color_range">ช่วงสัญญาณสี</string>
+    <string name="color_range_limited">Limited (16-235)</string>
+    <string name="color_range_full">Full (0-255)</string>
+</resources>
